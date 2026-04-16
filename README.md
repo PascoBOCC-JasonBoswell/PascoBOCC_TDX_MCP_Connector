@@ -1,48 +1,24 @@
 # TDX MCP Server
 
-A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that wraps the [TeamDynamix (TDX) REST API](https://solutions.teamdynamix.com/TDWebApi/), enabling AI-assisted IT service management through Claude Desktop, Claude Code, and other MCP clients.
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that wraps the [TeamDynamix (TDX) REST API](https://solutions.teamdynamix.com/TDWebApi/), enabling AI-assisted IT service management through MCP-compatible AI clients, including GitHub Copilot Chat.
 
 This server exposes **41 tools** across **9 domains** — tickets, assets, CMDB, knowledge base, people, projects, accounts, groups, and custom attributes — allowing natural language interaction with your TDX instance.
 
 ## Quick Start
 
-### macOS
+### Setup
 
-1. Double-click `setup-mac.command`
-2. Enter your BEID, Web Services Key, and App ID when prompted
-3. Restart Claude Desktop
+1. **Install dependencies and build**
+   ```bash
+   npm install
+   npm run build
+   ```
 
-### Windows
+2. **On Windows**: Run `setup-windows.ps1` to automate configuration
+   - Right-click → "Run with PowerShell"
+   - Follow prompts to enter TDX credentials
 
-1. Double-click `setup-windows.bat`
-2. Enter your BEID, Web Services Key, and App ID when prompted
-3. Restart Claude Desktop
-
-### Manual Setup
-
-```bash
-npm install
-npm run build
-```
-
-Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
-
-```json
-{
-  "mcpServers": {
-    "tdx": {
-      "command": "node",
-      "args": ["/path/to/TDX-MCP/dist/index.js"],
-      "env": {
-        "TDX_BASE_URL": "https://yourorg.teamdynamix.com/TDWebApi/api",
-        "TDX_BEID": "your-beid-guid",
-        "TDX_WEB_SERVICES_KEY": "your-web-services-key-guid",
-        "TDX_APP_ID": "123"
-      }
-    }
-  }
-}
-```
+3. **Configure GitHub Copilot Chat** (see [GitHub Copilot Chat Setup](#github-copilot-chat-setup) below)
 
 ## Authentication
 
@@ -160,9 +136,68 @@ These tools do not require an `appId`.
 
 Common `componentId` values for `tdx-attributes-get`: `9` = Ticket, `27` = Asset, `63` = CI, `39` = KB Article, `2` = Project.
 
+## GitHub Copilot Chat Setup
+
+GitHub Copilot Chat integrates MCP servers via VS Code's built-in MCP support.
+
+### Automatic Setup (Windows)
+
+Run `setup-windows.ps1` to automatically configure `.vscode/mcp.json` for you.
+
+### Manual Setup
+
+1. **Build the server**
+   ```bash
+   npm install
+   npm run build
+   ```
+
+2. **Create/update `.vscode/mcp.json`** in your workspace:
+   ```json
+   {
+     "servers": {
+       "tdx": {
+         "type": "stdio",
+         "command": "node",
+         "args": ["${workspaceFolder}/dist/index.js"],
+         "env": {
+           "TDX_BASE_URL": "${input:tdxBaseUrl}",
+           "TDX_BEID": "${input:tdxBeid}",
+           "TDX_WEB_SERVICES_KEY": "${input:tdxWebServicesKey}",
+           "TDX_APP_ID": "${input:tdxAppId}"
+         }
+       }
+     }
+   }
+   ```
+
+3. **Add input variable prompts to `.vscode/settings.json`**:
+   ```json
+   {
+     "inputBox.input.variables": {
+       "tdxBaseUrl": {
+         "description": "TDX Web API Base URL (e.g., https://yourorg.teamdynamix.com/TDWebApi/api)"
+       },
+       "tdxBeid": {
+         "description": "TDX Admin BEID from TDAdmin > Organization Details > API Settings"
+       },
+       "tdxWebServicesKey": {
+         "description": "TDX Web Services Key from TDAdmin > Organization Details > API Settings"
+       },
+       "tdxAppId": {
+         "description": "Default TDX Application ID (integer)"
+       }
+     }
+   }
+   ```
+
+4. **Start using the tools in GitHub Copilot Chat**:
+   - Press `Ctrl+Shift+P` and run `MCP: List Servers` to verify the server is running
+   - Use natural language prompts in Copilot Chat and the TDX tools will be available
+
 ## Example Usage
 
-Once configured, you can use natural language in Claude Desktop or Claude Code:
+Once configured, you can use natural language in GitHub Copilot Chat:
 
 - "Search for open tickets assigned to me"
 - "Get ticket #12345 and show me the comments"
@@ -182,10 +217,10 @@ Once configured, you can use natural language in Claude Desktop or Claude Code:
 TDX-MCP/
   package.json
   tsconfig.json
-  .env.example
-  setup-mac.command        # macOS setup wizard
-  setup-windows.bat        # Windows setup launcher
   setup-windows.ps1        # Windows setup wizard
+  .vscode/
+    mcp.json               # GitHub Copilot Chat MCP configuration
+    settings.json          # VS Code input variable definitions
   src/
     index.ts               # Entry point
     config.ts              # Environment variable loading
@@ -205,4 +240,4 @@ TDX-MCP/
 
 ---
 
-Created by [University of Montana IT](https://www.umt.edu/it/) with [Claude](https://claude.ai)
+Created by [University of Montana IT](https://www.umt.edu/it/)

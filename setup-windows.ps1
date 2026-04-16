@@ -9,14 +9,14 @@ Set-Location $ScriptDir
 
 Clear-Host
 Write-Host "=============================================="
-Write-Host "  TDX MCP Server Setup for Claude Desktop"
+Write-Host "  TDX MCP Server Setup for Windows"
 Write-Host "=============================================="
 Write-Host ""
 Write-Host "This script will:"
 Write-Host "  1. Collect your TDX admin API keys"
 Write-Host "  2. Install dependencies"
 Write-Host "  3. Build the MCP server"
-Write-Host "  4. Configure Claude Desktop to use it"
+Write-Host "  4. Configure GitHub Copilot Chat MCP settings"
 Write-Host ""
 Write-Host "You'll need your BEID and Web Services Key from"
 Write-Host "TDAdmin > Organization Details > API Settings."
@@ -112,63 +112,87 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host ""
 Write-Host "=============================================="
-Write-Host "  Step 4: Configuring Claude Desktop..."
+Write-Host "  Step 4: Configuring GitHub Copilot Chat..."
 Write-Host "=============================================="
 Write-Host ""
 
-# Get the absolute path to the dist/index.js
-$McpPath = Join-Path $ScriptDir "dist\index.js"
-$ConfigDir = Join-Path $env:APPDATA "Claude"
-$ConfigFile = Join-Path $ConfigDir "claude_desktop_config.json"
-
-# Create config directory if it doesn't exist
-if (-not (Test-Path $ConfigDir)) {
-    New-Item -ItemType Directory -Path $ConfigDir -Force | Out-Null
+# Create .vscode directory if it doesn't exist
+$VscodeDir = Join-Path $ScriptDir ".vscode"
+if (-not (Test-Path $VscodeDir)) {
+    New-Item -ItemType Directory -Path $VscodeDir -Force | Out-Null
+    Write-Host "Created .vscode directory"
 }
 
-# Load existing config or create new one
-$config = @{}
-if (Test-Path $ConfigFile) {
+# Create .vscode/mcp.json
+$mcpConfigFile = Join-Path $VscodeDir "mcp.json"
+$mcpConfig = @{
+    servers = @{
+        tdx = @{
+            type = "stdio"
+            command = "node"
+            args = @("`${workspaceFolder}/dist/index.js")
+            env = @{
+                TDX_BASE_URL = "`${input:tdxBaseUrl}"
+                TDX_BEID = "`${input:tdxBeid}"
+                TDX_WEB_SERVICES_KEY = "`${input:tdxWebServicesKey}"
+                TDX_APP_ID = "`${input:tdxAppId}"
+            }
+        }
+    }
+}
+
+$mcpConfig | ConvertTo-Json -Depth 10 | Set-Content $mcpConfigFile -Encoding UTF8
+Write-Host "Created .vscode/mcp.json"
+
+# Create .vscode/settings.json with input variable definitions
+$settingsFile = Join-Path $VscodeDir "settings.json"
+$existingSettings = @{}
+
+if (Test-Path $settingsFile) {
     try {
-        $config = Get-Content $ConfigFile -Raw | ConvertFrom-Json -AsHashtable
+        $existingSettings = Get-Content $settingsFile -Raw | ConvertFrom-Json -AsHashtable
     } catch {
-        $config = @{}
+        $existingSettings = @{}
     }
 }
 
-# Ensure mcpServers exists
-if (-not $config.ContainsKey('mcpServers')) {
-    $config['mcpServers'] = @{}
+# Add input variable definitions (merge with existing if present)
+if (-not $existingSettings.ContainsKey('inputBox.input.variables')) {
+    $existingSettings['inputBox.input.variables'] = @{}
 }
 
-# Add/update tdx config
-$config['mcpServers']['tdx'] = @{
-    'command' = 'node'
-    'args' = @($McpPath)
-    'env' = @{
-        'TDX_BASE_URL' = $TdxBaseUrl
-        'TDX_BEID' = $TdxBeid
-        'TDX_WEB_SERVICES_KEY' = $TdxWebServicesKey
-        'TDX_APP_ID' = $TdxAppId
-    }
+$existingSettings['inputBox.input.variables']['tdxBaseUrl'] = @{
+    description = "TDX Web API Base URL (e.g., https://yourorg.teamdynamix.com/TDWebApi/api)"
+}
+$existingSettings['inputBox.input.variables']['tdxBeid'] = @{
+    description = "TDX Admin BEID from TDAdmin > Organization Details > API Settings"
+}
+$existingSettings['inputBox.input.variables']['tdxWebServicesKey'] = @{
+    description = "TDX Web Services Key from TDAdmin > Organization Details > API Settings"
+}
+$existingSettings['inputBox.input.variables']['tdxAppId'] = @{
+    description = "Default TDX Application ID (integer)"
 }
 
-# Write config back
-$config | ConvertTo-Json -Depth 10 | Set-Content $ConfigFile -Encoding UTF8
-
-Write-Host "Configuration saved to: $ConfigFile"
+$existingSettings | ConvertTo-Json -Depth 10 | Set-Content $settingsFile -Encoding UTF8
+Write-Host "Updated .vscode/settings.json"
 
 Write-Host ""
 Write-Host "=============================================="
 Write-Host "  Setup Complete!"
 Write-Host "=============================================="
 Write-Host ""
-Write-Host "The TDX MCP server has been configured."
+Write-Host "The TDX MCP server has been configured for GitHub Copilot Chat."
 Write-Host ""
 Write-Host "Next steps:"
-Write-Host "  1. Quit Claude Desktop completely"
-Write-Host "  2. Reopen Claude Desktop"
-Write-Host "  3. You should see 'tdx' in the MCP tools"
+Write-Host "  1. Open VS Code in this workspace"
+Write-Host "  2. When prompted, provide your TDX credentials:"
+Write-Host "     - TDX Base URL"
+Write-Host "     - TDX BEID"
+Write-Host "     - TDX Web Services Key"
+Write-Host "     - TDX App ID"
+Write-Host "  3. Open Copilot Chat (Ctrl+Shift+I)"
+Write-Host "  4. The TDX tools will be available automatically"
 Write-Host ""
 Write-Host "You can now use commands like:"
 Write-Host "  - 'Search for open tickets assigned to me'"

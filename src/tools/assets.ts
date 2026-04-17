@@ -198,4 +198,18 @@ export function registerAssetTools(server: McpServer, client: TdxClient) {
       }
     }
   );
+
+  server.tool(
+    "tdx-asset-categories",
+    "Get all available asset categories/forms in TDX",
+    {},
+    async () => {
+      try {
+        const result = await client.get("/assets/forms");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (e: unknown) {
+        return { content: [{ type: "text", text: String(e) }], isError: true };
+      }
+    }
+  );
 }

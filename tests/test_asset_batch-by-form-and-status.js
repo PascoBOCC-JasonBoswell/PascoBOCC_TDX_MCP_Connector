@@ -70,7 +70,7 @@ rl.on("line", (line) => {
           name: "tdx-statuses-get",
           arguments: {
             componentType: "assets",
-            appId: 116,
+            appId: parseInt(process.env.TDX_ASSETS_APP_ID),
           },
         },
       };
@@ -142,7 +142,7 @@ rl.on("line", (line) => {
               params: {
                 name: "tdx-asset-search",
                 arguments: {
-                  appId: 116,
+                  appId: parseInt(process.env.TDX_ASSETS_APP_ID),
                   maxResults: 10000,
                   formIds: [batch.formId],
                   statusIds: [batch.statusId],

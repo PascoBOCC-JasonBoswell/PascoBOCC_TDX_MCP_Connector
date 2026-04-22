@@ -33,7 +33,7 @@ async function demonstrateAssetBatcher() {
 
     // Example 1: Get all assets
     console.log("EXAMPLE 1: Retrieve ALL assets (Form × Status batching)\n");
-    const allResult = await batcher.getAllAssets(116, (msg) => console.log(msg));
+    const allResult = await batcher.getAllAssets(parseInt(process.env.TDX_ASSETS_APP_ID), (msg) => console.log(msg));
 
     console.log("\n" + "=".repeat(70));
     console.log("EXAMPLE 1 RESULTS:\n");

@@ -32,7 +32,7 @@ async function generateAssetReport() {
 
     console.log("Retrieving complete asset data...\n");
 
-    const result = await batcher.getAllAssets(116, (msg) => {
+    const result = await batcher.getAllAssets(parseInt(process.env.TDX_ASSETS_APP_ID), (msg) => {
       if (msg.includes("Progress") || msg.includes("Total")) {
         console.log(`  ${msg}`);
       }

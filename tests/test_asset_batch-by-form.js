@@ -103,7 +103,7 @@ rl.on("line", (line) => {
               params: {
                 name: "tdx-asset-search",
                 arguments: {
-                  appId: 116,
+                  appId: parseInt(process.env.TDX_ASSETS_APP_ID),
                   maxResults: 10000,
                   formIds: [batch.formId],
                 },

@@ -1,5 +1,10 @@
-import { TdxAuth } from "./dist/auth.js";
-import { loadConfig } from "./dist/config.js";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import { TdxAuth } from "../dist/auth.js";
+import { loadConfig } from "../dist/config.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const config = loadConfig();
 const auth = new TdxAuth(config);

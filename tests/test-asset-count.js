@@ -1,9 +1,15 @@
 import { spawn } from "child_process";
 import { createInterface } from "readline";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = resolve(__dirname, "..");
 
 // Start the MCP server as a subprocess
 const server = spawn("node", ["dist/index.js"], {
-  cwd: process.cwd(),
+  cwd: projectRoot,
   stdio: ["pipe", "pipe", "pipe"],
 });
 

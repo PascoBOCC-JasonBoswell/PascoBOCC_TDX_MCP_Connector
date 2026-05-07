@@ -8,6 +8,7 @@ export interface TdxConfig {
   webServicesKey: string;
   appId: number;
   assetsAppId?: number;
+  kbAppId?: number;
 }
 
 export function loadConfig(): TdxConfig {
@@ -16,6 +17,7 @@ export function loadConfig(): TdxConfig {
   const webServicesKey = process.env.TDX_WEB_SERVICES_KEY;
   const appIdStr = process.env.TDX_APP_ID;
   const assetsAppIdStr = process.env.TDX_ASSETS_APP_ID;
+  const kbAppIdStr = process.env.TDX_KB_APP_ID;
 
   if (!baseUrl) throw new Error("TDX_BASE_URL is required");
   if (!beid) throw new Error("TDX_BEID is required");
@@ -31,5 +33,11 @@ export function loadConfig(): TdxConfig {
     if (isNaN(assetsAppId)) throw new Error("TDX_ASSETS_APP_ID must be an integer");
   }
 
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), beid, webServicesKey, appId, assetsAppId };
+  let kbAppId: number | undefined;
+  if (kbAppIdStr) {
+    kbAppId = parseInt(kbAppIdStr, 10);
+    if (isNaN(kbAppId)) throw new Error("TDX_KB_APP_ID must be an integer");
+  }
+
+  return { baseUrl: baseUrl.replace(/\/+$/, ""), beid, webServicesKey, appId, assetsAppId, kbAppId };
 }

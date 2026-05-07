@@ -3,7 +3,7 @@ import { z } from "zod";
 import { TdxClient } from "../tdx-client.js";
 
 export function registerKbTools(server: McpServer, client: TdxClient) {
-  const defaultAppId = client.appId;
+  const defaultAppId = client.kbAppId ?? client.appId;
 
   server.tool(
     "tdx-kb-create",

@@ -12,7 +12,7 @@ param()
 function Test-SSH {
     Write-Host "Testing SSH connection..." -ForegroundColor Yellow
     $target = $ServerUser + "@" + $ServerIP
-    ssh -o ConnectTimeout=5 $target "echo 'SSH connection successful'" 2>&1 | Out-Null
+    ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new $target "echo 'SSH connection successful'" 2>&1 | Out-Null
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "SSH connection successful" -ForegroundColor Green
@@ -27,8 +27,14 @@ function Test-SSH {
 
 function Copy-ProjectToServer {
     Write-Host "`nCopying project files to server..." -ForegroundColor Yellow
-    $target = $ServerUser + "@" + $ServerIP + ":/tmp/tdx-mcp-source"
-    scp -r "$LocalProjectPath" $target
+    
+    # Create temp directory with proper permissions first
+    $target = $ServerUser + "@" + $ServerIP
+    ssh -o StrictHostKeyChecking=accept-new $target "rm -rf /tmp/tdx-mcp-source && mkdir -p /tmp/tdx-mcp-source && chmod 777 /tmp/tdx-mcp-source"
+    
+    # Now copy the files
+    $copyTarget = $ServerUser + "@" + $ServerIP + ":/tmp/tdx-mcp-source"
+    scp -r -o StrictHostKeyChecking=accept-new "$LocalProjectPath" $copyTarget
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Project files copied successfully" -ForegroundColor Green
@@ -48,7 +54,7 @@ function Copy-EnvToServer {
     }
     
     $target = $ServerUser + "@" + $ServerIP + ":/tmp/tdx-mcp.env"
-    scp "$EnvFilePath" $target
+    scp -o StrictHostKeyChecking=accept-new "$EnvFilePath" $target
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host ".env file copied successfully" -ForegroundColor Green
@@ -62,22 +68,53 @@ function Copy-EnvToServer {
 function Run-SetupScript {
     Write-Host "`nRunning setup script on server..." -ForegroundColor Yellow
     
-    $setupCommands = @"
+    $target = $ServerUser + "@" + $ServerIP
+    
+    $setupScript = @"
 #!/bin/bash
 set -e
-cp /tmp/tdx-mcp-source/setup-ubuntu.sh ~/
-chmod +x ~/setup-ubuntu.sh
-sudo ~/setup-ubuntu.sh
-sudo cp -r /tmp/tdx-mcp-source/* /opt/tdx-mcp/
-sudo chown -R tdx-mcp:tdx-mcp /opt/tdx-mcp
+sudo mkdir -p /opt/tdx-mcp
+sudo cp -r /tmp/tdx-mcp-source/PascoBOCC_TDX_MCP_Connector/* /opt/tdx-mcp/
 sudo cp /tmp/tdx-mcp.env /opt/tdx-mcp/.env
-sudo chown tdx-mcp:tdx-mcp /opt/tdx-mcp/.env
 sudo chmod 600 /opt/tdx-mcp/.env
-echo "Setup complete!"
+cd /opt/tdx-mcp
+echo 'Installing dependencies...'
+sudo npm install
+echo 'Fixing permissions on tsc...'
+sudo chmod +x node_modules/.bin/tsc
+echo 'Building project...'
+sudo npm run build
+echo 'Removing dev dependencies...'
+sudo npm prune --omit=dev
+echo 'Setting permissions...'
+sudo chown -R tdx-mcp:tdx-mcp /opt/tdx-mcp
+echo 'Creating systemd service...'
+sudo mkdir -p /etc/systemd/system
+sudo tee /etc/systemd/system/tdx-mcp.service > /dev/null << 'EOF'
+[Unit]
+Description=TDX MCP Connector Server
+After=network.target
+
+[Service]
+Type=simple
+User=tdx-mcp
+WorkingDirectory=/opt/tdx-mcp
+ExecStart=/usr/bin/node /opt/tdx-mcp/dist/index.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tdx-mcp
+Environment="NODE_ENV=production"
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload
+echo 'Setup complete!'
 "@
     
-    $target = $ServerUser + "@" + $ServerIP
-    $setupCommands | ssh $target "bash"
+    $setupScript | ssh -o StrictHostKeyChecking=accept-new -t $target "cat > /tmp/setup-deploy.sh && bash /tmp/setup-deploy.sh"
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Setup completed successfully" -ForegroundColor Green

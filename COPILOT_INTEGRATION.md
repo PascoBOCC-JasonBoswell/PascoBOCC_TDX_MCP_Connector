@@ -102,23 +102,44 @@ Content-Type: application/json
 **Public Endpoints** (no authentication):
 - `GET /health` (for load balancers and health checks)
 
-### To Change the API Key
-If you need to update or change the API key:
+### API Key Expiration
+**❌ The MCP_API_KEY does NOT expire**
+- This is a static authentication token configured in the systemd service
+- It persists across service restarts and server reboots
+- It only changes if you manually update it in the systemd service file
 
-1. **Update the service file:**
+**Note**: This is different from the TDX API tokens in your `.env` file, which expire after 24 hours. The MCP wrapper automatically refreshes those tokens, so you don't need to worry about them.
+
+### To Change the API Key
+
+You may want to rotate your API key for security reasons:
+- If you suspect the key has been compromised
+- On a regular security rotation schedule
+- When changing Copilot Studio configurations
+
+**Steps to rotate the key:**
+
+1. **Generate a new secure key:**
+```bash
+openssl rand -hex 32
+```
+
+2. **Update the service file:**
 ```bash
 ssh itmcp@10.210.1.38 "sudo nano /etc/systemd/system/tdx-mcp.service"
 ```
 
-2. **Find and update this line in the `[Service]` section:**
+3. **Find and update this line in the `[Service]` section:**
 ```ini
 Environment="MCP_API_KEY=your-new-key-here"
 ```
 
-3. **Restart the service:**
+4. **Restart the service:**
 ```bash
 ssh itmcp@10.210.1.38 "sudo systemctl daemon-reload && sudo systemctl restart tdx-mcp"
 ```
+
+5. **Update Copilot Studio** with the new key in the Authorization header
 
 ### Use API Key in Requests
 
@@ -277,8 +298,12 @@ ssh itmcp@10.210.1.38 "sudo systemctl restart tdx-mcp && sleep 2 && curl http://
 
 Available environment variables:
 - `MCP_HTTP_PORT` - HTTP server port (default: 3000)
-- `MCP_API_KEY` - API key for request authentication (optional, if set all endpoints except /health require this key)
+- `MCP_API_KEY` - HTTP wrapper API key for request authentication (never expires, only changes if manually updated)
 - `NODE_ENV` - Set to "production" for the service
+
+**Note on credential management:**
+- **MCP_API_KEY**: HTTP wrapper authentication - permanent unless manually rotated
+- **TDX API credentials** (in .env): Auto-refresh every 24 hours - no manual action needed
 
 ## Next Steps
 

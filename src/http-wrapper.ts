@@ -40,11 +40,13 @@ function transformMCPResponse(mcpResponse, requestMessage) {
     // Current HTTP wrapper: returns the MCP response directly
     const result = mcpResponse.result || mcpResponse;
     if (!result || !result.content) {
+      console.log(`[Transform] No content in response, returning as-is`);
       return mcpResponse;
     }
 
     const content = result.content;
     if (!Array.isArray(content) || content.length === 0) {
+      console.log(`[Transform] Content is not array or empty`);
       return mcpResponse;
     }
 
@@ -52,20 +54,20 @@ function transformMCPResponse(mcpResponse, requestMessage) {
     const textContent = firstContent.text || (typeof firstContent === 'string' ? firstContent : null);
     
     if (!textContent) {
+      console.log(`[Transform] No text content found`);
       return mcpResponse;
     }
 
     // Parse the JSON text
     let parsedData;
     try {
+      console.log(`[Transform] Attempting to parse JSON string (${textContent.length} chars, starts with: ${textContent.substring(0, 50)})`);
       parsedData = JSON.parse(textContent);
     } catch (e) {
       // If not JSON, return as-is
       console.log(`[Transform] JSON parse error: ${e.message}, returning original`);
       return mcpResponse;
     }
-
-    console.log(`[Transform] Attempting to parse JSON string (${textContent.length} chars, starts with: ${textContent.substring(0, 50)})`);
 
     const toolName = requestMessage?.params?.name || 'unknown';
     const toolArgs = requestMessage?.params?.arguments || {};
@@ -111,10 +113,10 @@ function transformMCPResponse(mcpResponse, requestMessage) {
       _raw: mcpResponse
     };
 
-    console.log(`[Transform] Transformed ${toolName} response: ${itemCount} items`);
+    console.log(`[Transform] Successfully transformed response with ${itemCount} items`);
     return transformed;
   } catch (err) {
-    console.error('[Response Transform] Error:', err.message);
+    console.error(`[Transform] Unexpected error: ${err.message}`, err);
     return mcpResponse;
   }
 }
@@ -384,30 +386,61 @@ class MCPSession {
   }
 
   handleMCPResponse(message) {
-    // Transform the message for better agent consumption
-    const transformedMessage = transformMCPResponse(message, this.lastRequest);
+    console.log(`[MCP Session] Received response with id: ${message.id}`);
+    
+    // Check if this is a control message (initialize, tools/list, notifications)
+    // vs a tool call result
+    const isControlMessage = !message.result?.content || 
+                             message.result?.tools ||
+                             !Array.isArray(message.result?.content);
+    
+    let transformedMessage = message;
+    
+    if (!isControlMessage) {
+      // Transform the message for better agent consumption
+      transformedMessage = transformMCPResponse(message, this.lastRequest);
+      console.log(`[MCP Session] Transformed tool response`);
+    } else {
+      console.log(`[MCP Session] Control message, passing through without transformation`);
+    }
+    
     // Broadcast to all SSE clients
     this.broadcastToClients(transformedMessage);
   }
 
   registerSSEClient(res) {
     this.sseClients.push(res);
+    console.log(`[MCP Session] Registered SSE client, ${this.messageQueue.length} queued messages to flush`);
     
     // Send any queued messages
-    this.messageQueue.forEach(msg => {
-      res.write(`data: ${JSON.stringify(msg)}\n\n`);
+    this.messageQueue.forEach((msg, idx) => {
+      try {
+        res.write(`data: ${JSON.stringify(msg)}\n\n`);
+        console.log(`[MCP Session] Flushed queued message ${idx + 1}/${this.messageQueue.length}`);
+      } catch (err) {
+        console.error(`[MCP Session] Error flushing queued message: ${err.message}`);
+      }
     });
     this.messageQueue = [];
+    console.log(`[MCP Session] Queued message flush complete`);
   }
 
   broadcastToClients(message) {
     this.sseClients = this.sseClients.filter(res => !res.destroyed);
     
+    console.log(`[MCP Session] Broadcasting to ${this.sseClients.length} SSE clients for session ${this.sessionId}`);
+    
     if (this.sseClients.length === 0) {
+      console.log(`[MCP Session] No active SSE clients, queuing message for ${this.sessionId}`);
       this.messageQueue.push(message);
     } else {
-      this.sseClients.forEach(res => {
-        res.write(`data: ${JSON.stringify(message)}\n\n`);
+      this.sseClients.forEach((res, idx) => {
+        try {
+          res.write(`data: ${JSON.stringify(message)}\n\n`);
+          console.log(`[MCP Session] Sent response to SSE client ${idx + 1}/${this.sseClients.length}`);
+        } catch (err) {
+          console.error(`[MCP Session] Error writing to SSE client: ${err.message}`);
+        }
       });
     }
   }
@@ -598,26 +631,46 @@ function handleMCPSSE(req, res) {
   const sessionId = req.headers['x-mcp-session'] || req.url.split('?sessionId=')[1] || 'default';
   
   console.log(`[MCP SSE] Client connecting with session: ${sessionId}`);
+  console.log(`[MCP SSE] Headers received:`, {
+    'x-mcp-session': req.headers['x-mcp-session'],
+    'user-agent': req.headers['user-agent'],
+    'authorization': req.headers['authorization'] ? 'present' : 'missing'
+  });
 
-  // Set SSE headers
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Set SSE headers - crucial for proper streaming
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'X-Accel-Buffering': 'no' // Disable buffering proxies
+  });
 
-  // Send initial connection message
-  res.write(`data: ${JSON.stringify({
-    type: 'connected',
-    sessionId: sessionId,
-    timestamp: new Date().toISOString()
-  })}\n\n`);
+  console.log(`[MCP SSE] Headers sent to client`);
 
   const session = getOrCreateSession(sessionId);
   session.registerSSEClient(res);
+  console.log(`[MCP SSE] Registered SSE client for session ${sessionId}`);
+
+  // Keep-alive interval: send a comment every 15 seconds to prevent connection timeouts
+  const keepAliveInterval = setInterval(() => {
+    if (!res.destroyed) {
+      try {
+        res.write(': keep-alive\n');
+        console.log(`[MCP SSE] Sent keep-alive ping for ${sessionId}`);
+      } catch (err) {
+        console.error(`[MCP SSE] Error sending keep-alive for ${sessionId}:`, err.message);
+      }
+    } else {
+      clearInterval(keepAliveInterval);
+    }
+  }, 15000);
 
   // Handle client disconnect
   req.on('close', () => {
-    console.log(`[MCP SSE] Client disconnected: ${sessionId}`);
+    clearInterval(keepAliveInterval);
+    console.log(`[MCP SSE] Client closed connection for ${sessionId}`);
     session.removeSSEClient(res);
     if (session.sseClients.length === 0) {
       console.log(`[MCP SSE] No more clients for session ${sessionId}, cleaning up`);
@@ -627,8 +680,19 @@ function handleMCPSSE(req, res) {
   });
 
   req.on('error', (err) => {
-    console.error(`[MCP SSE] Client error: ${err.message}`);
+    clearInterval(keepAliveInterval);
+    console.error(`[MCP SSE] Request error for ${sessionId}: ${err.message} (code: ${err.code})`);
     session.removeSSEClient(res);
+  });
+
+  res.on('error', (err) => {
+    clearInterval(keepAliveInterval);
+    console.error(`[MCP SSE] Response error for ${sessionId}: ${err.message} (code: ${err.code})`);
+  });
+
+  res.on('finish', () => {
+    clearInterval(keepAliveInterval);
+    console.log(`[MCP SSE] Response finished for ${sessionId}`);
   });
 }
 

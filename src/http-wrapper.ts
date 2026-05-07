@@ -6,6 +6,8 @@
  * Allows Copilot Studio and other clients to interact with MCP tools via HTTP
  */
 
+// @ts-nocheck
+
 import http from 'http';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -23,7 +25,106 @@ const PORT = process.env.MCP_HTTP_PORT || 3000;
 const API_KEY = process.env.MCP_API_KEY || null; // Set to require API key auth
 const MCPscriptPath = join(__dirname, '..', 'dist', 'index.js');
 
+/**
+ * Transform MCP responses into agent-friendly format
+ * Flattens nested JSON, extracts data, and adds metadata
+ */
+function transformMCPResponse(mcpResponse, requestMessage) {
+  try {
+    if (!mcpResponse) {
+      return mcpResponse;
+    }
+
+    // Extract result content - handle both formats:
+    // Old: mcpResponse.result.content
+    // Current HTTP wrapper: returns the MCP response directly
+    const result = mcpResponse.result || mcpResponse;
+    if (!result || !result.content) {
+      return mcpResponse;
+    }
+
+    const content = result.content;
+    if (!Array.isArray(content) || content.length === 0) {
+      return mcpResponse;
+    }
+
+    const firstContent = content[0];
+    const textContent = firstContent.text || (typeof firstContent === 'string' ? firstContent : null);
+    
+    if (!textContent) {
+      return mcpResponse;
+    }
+
+    // Parse the JSON text
+    let parsedData;
+    try {
+      parsedData = JSON.parse(textContent);
+    } catch (e) {
+      // If not JSON, return as-is
+      console.log(`[Transform] JSON parse error: ${e.message}, returning original`);
+      return mcpResponse;
+    }
+
+    console.log(`[Transform] Attempting to parse JSON string (${textContent.length} chars, starts with: ${textContent.substring(0, 50)})`);
+
+    const toolName = requestMessage?.params?.name || 'unknown';
+    const toolArgs = requestMessage?.params?.arguments || {};
+    const timestamp = new Date().toISOString();
+
+    // Determine entity type
+    let entityType = 'unknown';
+    if (toolName.includes('ticket')) entityType = 'tickets';
+    else if (toolName.includes('asset')) entityType = 'assets';
+    else if (toolName.includes('cmdb') || toolName.includes('configuration')) entityType = 'configurationItems';
+    else if (toolName.includes('kb') || toolName.includes('knowledge')) entityType = 'knowledgeBase';
+    else if (toolName.includes('project')) entityType = 'projects';
+    else if (toolName.includes('account')) entityType = 'accounts';
+    else if (toolName.includes('people') || toolName.includes('person')) entityType = 'people';
+    else if (toolName.includes('group')) entityType = 'groups';
+    else if (toolName.includes('status')) entityType = 'statuses';
+
+    // Count items if array
+    const itemCount = Array.isArray(parsedData) ? parsedData.length : 1;
+
+    // Build transformed response
+    const transformed = {
+      success: true,
+      type: entityType,
+      timestamp: timestamp,
+      tool: toolName,
+      
+      // Main data payload - flattened
+      data: parsedData,
+      
+      // Metadata for agents
+      meta: {
+        count: itemCount,
+        resultType: Array.isArray(parsedData) ? 'array' : 'object',
+        query: toolArgs,
+        tool: {
+          name: toolName,
+          type: entityType
+        }
+      },
+      
+      // Keep original for reference
+      _raw: mcpResponse
+    };
+
+    console.log(`[Transform] Transformed ${toolName} response: ${itemCount} items`);
+    return transformed;
+  } catch (err) {
+    console.error('[Response Transform] Error:', err.message);
+    return mcpResponse;
+  }
+}
+
 class MCPServerPool {
+  availableProcesses: any[] = [];
+  warmingProcesses: Promise<void>[] = [];
+  maxProcesses: number = 5;
+  minWarmProcesses: number = 2;
+
   constructor() {
     this.availableProcesses = [];
     this.warmingProcesses = [];
@@ -159,14 +260,24 @@ const mcpPool = new MCPServerPool();
 
 // MCP Session Manager for HTTP transport
 class MCPSession {
-  constructor(sessionId) {
+  sessionId: string;
+  mcp: any;
+  requestId: number = 0;
+  pendingRequests: Map<number, any>;
+  sseClients: any[] = [];
+  messageQueue: any[] = [];
+  outputBuffer: string = '';
+  lastRequest: any = null;
+
+  constructor(sessionId: string) {
     this.sessionId = sessionId;
     this.mcp = null;
     this.requestId = 0;
     this.pendingRequests = new Map();
     this.sseClients = [];
     this.messageQueue = [];
-    this.outputBuffer = ''; // Buffer for multi-line responses
+    this.outputBuffer = '';
+    this.lastRequest = null;
   }
 
   initialize() {
@@ -258,6 +369,7 @@ class MCPSession {
 
   sendRequest(message) {
     console.log(`[MCP Session] Sending request to ${this.sessionId}:`, JSON.stringify(message).substring(0, 100));
+    this.lastRequest = message; // Store for use in transformation
     if (!this.mcp || this.mcp.killed) {
       console.log(`[MCP Session] Initializing new MCP process for ${this.sessionId}`);
       this.initialize();
@@ -272,8 +384,10 @@ class MCPSession {
   }
 
   handleMCPResponse(message) {
+    // Transform the message for better agent consumption
+    const transformedMessage = transformMCPResponse(message, this.lastRequest);
     // Broadcast to all SSE clients
-    this.broadcastToClients(message);
+    this.broadcastToClients(transformedMessage);
   }
 
   registerSSEClient(res) {
@@ -521,6 +635,7 @@ function handleMCPSSE(req, res) {
 // Handle MCP JSON-RPC requests
 function handleMcpRequest(message, res) {
   const mcp = mcpPool.getProcess();
+  const requestStartTime = Date.now();
 
   let output = '';
   let error = '';
@@ -585,18 +700,30 @@ function handleMcpRequest(message, res) {
             })
             .map(line => JSON.parse(line));
 
+          // Transform responses for better agent consumption
+          const transformedResults = results.map(result => transformMCPResponse(result, message));
+
+          const executionTime = Date.now() - requestStartTime;
+          
           res.writeHead(200);
+          res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({
             success: true,
-            results: results.length === 1 ? results[0] : results
+            results: transformedResults.length === 1 ? transformedResults[0] : transformedResults,
+            meta: {
+              executionTimeMs: executionTime,
+              timestamp: new Date().toISOString()
+            }
           }));
         } else {
           res.writeHead(200);
+          res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ success: true, message: 'Processed' }));
         }
       } catch (parseErr) {
         console.error('[HTTP Server] Response parse error:', parseErr.message);
         res.writeHead(200);
+        res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ output: output, raw: true }));
       }
     }

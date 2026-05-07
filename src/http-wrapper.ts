@@ -145,7 +145,9 @@ class MCPServerPool {
           TDX_BASE_URL: process.env.TDX_BASE_URL,
           TDX_BEID: process.env.TDX_BEID,
           TDX_WEB_SERVICES_KEY: process.env.TDX_WEB_SERVICES_KEY,
-          TDX_APP_ID: process.env.TDX_APP_ID
+          TDX_APP_ID: process.env.TDX_APP_ID,
+          TDX_ASSETS_APP_ID: process.env.TDX_ASSETS_APP_ID,
+          TDX_KB_APP_ID: process.env.TDX_KB_APP_ID
         }
       });
 
@@ -217,7 +219,9 @@ class MCPServerPool {
         TDX_BASE_URL: process.env.TDX_BASE_URL,
         TDX_BEID: process.env.TDX_BEID,
         TDX_WEB_SERVICES_KEY: process.env.TDX_WEB_SERVICES_KEY,
-        TDX_APP_ID: process.env.TDX_APP_ID
+        TDX_APP_ID: process.env.TDX_APP_ID,
+        TDX_ASSETS_APP_ID: process.env.TDX_ASSETS_APP_ID,
+        TDX_KB_APP_ID: process.env.TDX_KB_APP_ID
       }
     });
 

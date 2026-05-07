@@ -34,6 +34,8 @@ All successful API responses follow this structure:
 }
 ```
 
+**Note**: The `results` field contains a single transformed result object. Typically, one MCP tool call produces one result. If multiple results are returned, they appear as an array in the `results` field.
+
 ## Response Fields
 
 ### Top Level
@@ -75,17 +77,17 @@ All successful API responses follow this structure:
 
 The `type` field indicates what kind of data was returned:
 
-| Type | Description | Example Tool |
-|------|-------------|--------------|
-| `tickets` | ServiceNow/TDX tickets | `tdx-ticket-search`, `tdx-ticket-get` |
-| `assets` | IT assets/inventory | `tdx-asset-search`, `tdx-asset-get` |
-| `configurationItems` | CMDB configuration items | `tdx-cmdb-query` |
-| `projects` | Projects | `tdx-project-get` |
-| `accounts` | Department/account records | `tdx-account-list` |
-| `groups` | User groups/teams | `tdx-group-list` |
-| `people` | User/person records | `tdx-people-get` |
-| `knowledgeBase` | Knowledge base articles | `tdx-kb-search` |
-| `statuses` | Status options | `tdx-status-list` |
+| Type | Description | Example Tools |
+|------|-------------|----------------|
+| `tickets` | ServiceNow/TDX tickets | `tdx-ticket-search`, `tdx-ticket-get`, `tdx-ticket-create` |
+| `assets` | IT assets/inventory | `tdx-asset-search`, `tdx-asset-get`, `tdx-asset-create` |
+| `configurationItems` | CMDB configuration items | `tdx-cmdb-search`, `tdx-cmdb-get`, `tdx-cmdb-create` |
+| `projects` | Projects | `tdx-project-get`, `tdx-project-search`, `tdx-project-create` |
+| `accounts` | Department/account records | `tdx-account-search`, `tdx-account-get` |
+| `groups` | User groups/teams | `tdx-group-search`, `tdx-group-get` |
+| `people` | User/person records | `tdx-people-get`, `tdx-people-search`, `tdx-people-lookup` |
+| `knowledgeBase` | Knowledge base articles | `tdx-kb-search`, `tdx-kb-get`, `tdx-kb-create` |
+| `statuses` | Status options | `tdx-statuses-get` |
 
 ## Usage Examples
 

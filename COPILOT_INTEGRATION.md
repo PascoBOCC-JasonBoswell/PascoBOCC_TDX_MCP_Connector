@@ -3,6 +3,7 @@
 ## Status
 ✅ **Server is running and ready for Copilot Studio integration**
 🔐 **API Key Authentication: ACTIVE** (All endpoints except `/health` require authentication)
+📊 **Available Tools**: 43 tools across 10 domains
 
 ## Service Details
 - **Status**: Active (running)
@@ -49,37 +50,82 @@ Response:
 ```json
 {
   "tools": [
-    "tickets_create",
-    "tickets_query",
-    "tickets_update",
-    "assets_create",
-    "assets_query",
-    "assets_update",
-    "cmdb_create",
-    "cmdb_query",
-    "people_get",
-    "projects_create",
-    "accounts_list",
-    "groups_list",
-    "kb_search"
+    "tdx-ticket-create",
+    "tdx-ticket-search",
+    "tdx-ticket-get",
+    "tdx-ticket-update",
+    "tdx-ticket-patch",
+    "tdx-ticket-feed-get",
+    "tdx-ticket-feed-add",
+    "tdx-asset-create",
+    "tdx-asset-search",
+    "tdx-asset-get",
+    "tdx-cmdb-create",
+    "tdx-cmdb-search",
+    "tdx-people-get",
+    "tdx-projects-create",
+    "tdx-account-search",
+    "tdx-group-get",
+    "tdx-kb-search",
+    "... and 26 more tools ..."
   ]
 }
 ```
 
+**Complete tool list** (43 total):
+- **Tickets** (9 tools): create, search, get, update, patch, feed-get, feed-add, add-asset, add-contact
+- **Assets** (8 tools): create, search, get, update, patch, delete, categories, feed-add
+- **CMDB** (7 tools): create, search, get, update, delete, feed-add, add-relationship
+- **KB** (5 tools): search, create, get, update, delete
+- **People** (4 tools): get, search, lookup, update
+- **Projects** (4 tools): create, search, get, update
+- **Accounts** (2 tools): get, search
+- **Groups** (2 tools): get, search
+- **Attributes** (1 tool): get
+- **Statuses** (1 tool): get
+
 ### MCP Tool Invocation
+
+**POST /mcp** - Direct MCP JSON-RPC endpoint for tool invocation
 ```
 POST http://10.210.1.38:3000/mcp
 Content-Type: application/json
+Authorization: Bearer YOUR_API_KEY
 
 {
   "jsonrpc": "2.0",
   "id": 1,
-  "method": "invoke_tool",
+  "method": "tools/call",
   "params": {
-    "name": "tickets_query",
+    "name": "tdx-ticket-search",
     "arguments": {
-      "query": "status:open"
+      "statusIds": [896],
+      "maxResults": 10
     }
+  }
+}
+```
+
+**Response Format**:
+```json
+{
+  "success": true,
+  "results": {
+    "success": true,
+    "type": "tickets",
+    "timestamp": "2026-05-07T18:30:00.123Z",
+    "tool": "tdx-ticket-search",
+    "data": [ ],
+    "meta": {
+      "count": 10,
+      "resultType": "array",
+      "query": { "statusIds": [896], "maxResults": 10 },
+      "tool": { "name": "tdx-ticket-search", "type": "tickets" }
+    }
+  },
+  "meta": {
+    "executionTimeMs": 1250,
+    "timestamp": "2026-05-07T18:30:00.123Z"
   }
 }
 ```
@@ -288,16 +334,36 @@ ssh itmcp@10.210.1.38 "sudo systemctl restart tdx-mcp && sleep 2 && curl http://
 
 ## Integration Notes
 
-- The HTTP wrapper spawns MCP server processes on demand
-- Each request creates a subprocess that processes the tool invocation
-- Processes are pooled for efficiency (max 5 concurrent)
-- Timeouts after 10 seconds per request
-- CORS enabled for cross-origin requests
+- **Process Pooling**: HTTP wrapper maintains a pool of warm MCP processes for fast response times
+- **Process Management**: Each request uses an available process from the pool (max 5 concurrent)
+- **Request Timeout**: 10 seconds per request via `/mcp` endpoint, 30 seconds via HTTP transport
+- **CORS**: Enabled for cross-origin requests from any origin
+- **Response Format**: All `/mcp` responses transformed into agent-friendly JSON with metadata
+- **API Key**: Static, non-expiring authentication token - persists across restarts
+
+## HTTP Endpoints Summary
+
+| Endpoint | Method | Auth | Purpose |
+|----------|--------|------|---------|
+| `/health` | GET | No | Health check (returns status, uptime) |
+| `/status` | GET | Yes | Service status and version |
+| `/tools` | GET | Yes | List all 43 available tools |
+| `/mcp` | POST | Yes | Direct MCP JSON-RPC tool invocation |
+| `/` | GET | Yes | MCP-over-HTTP SSE connection |
+| `/` | POST | Yes | MCP-over-HTTP request/response |
 
 ## Environment Variables
 
 Available environment variables:
 - `MCP_HTTP_PORT` - HTTP server port (default: 3000)
+- `MCP_API_KEY` - API key for authentication (generated during setup)
+- `NODE_ENV` - Environment mode (default: production)
+- `TDX_BASE_URL` - TeamDynamix API base URL
+- `TDX_BEID` - TeamDynamix Business Edition ID
+- `TDX_WEB_SERVICES_KEY` - TeamDynamix API key
+- `TDX_APP_ID` - Default TDX App ID for service requests
+- `TDX_ASSETS_APP_ID` - TDX App ID for asset requests
+- `TDX_KB_APP_ID` - TDX App ID for knowledge base requests
 - `MCP_API_KEY` - HTTP wrapper API key for request authentication (never expires, only changes if manually updated)
 - `NODE_ENV` - Set to "production" for the service
 

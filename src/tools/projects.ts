@@ -2,6 +2,54 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { TdxClient } from "../tdx-client.js";
 
+export function registerProjectReadOnlyTools(server: McpServer, client: TdxClient) {
+  server.tool(
+    "tdx-project-get",
+    "Get a TDX project by ID",
+    {
+      id: z.number().describe("Project ID"),
+    },
+    async (params) => {
+      try {
+        const result = await client.get(`/projects/${params.id}`);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (e: unknown) {
+        return { content: [{ type: "text", text: String(e) }], isError: true };
+      }
+    }
+  );
+
+  server.tool(
+    "tdx-project-search",
+    "Search TDX projects with filters",
+    {
+      searchText: z.string().optional().describe("Full-text search query"),
+      statusIds: z.array(z.number()).optional().describe("Filter by status IDs"),
+      priorityIds: z.array(z.number()).optional().describe("Filter by priority IDs"),
+      accountIds: z.array(z.number()).optional().describe("Filter by account IDs"),
+      managerUids: z.array(z.string()).optional().describe("Filter by project manager UIDs"),
+      isActive: z.boolean().optional().describe("Filter by active status"),
+      maxResults: z.number().optional().describe("Max results to return (default 25)"),
+    },
+    async (params) => {
+      const body: Record<string, unknown> = {};
+      if (params.searchText !== undefined) body.SearchText = params.searchText;
+      if (params.statusIds !== undefined) body.StatusIDs = params.statusIds;
+      if (params.priorityIds !== undefined) body.PriorityIDs = params.priorityIds;
+      if (params.accountIds !== undefined) body.AccountIDs = params.accountIds;
+      if (params.managerUids !== undefined) body.ManagerUids = params.managerUids;
+      if (params.isActive !== undefined) body.IsActive = params.isActive;
+      if (params.maxResults !== undefined) body.MaxResults = params.maxResults;
+      try {
+        const result = await client.post("/projects/search", body);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (e: unknown) {
+        return { content: [{ type: "text", text: String(e) }], isError: true };
+      }
+    }
+  );
+}
+
 export function registerProjectTools(server: McpServer, client: TdxClient) {
   server.tool(
     "tdx-project-create",
@@ -48,22 +96,6 @@ export function registerProjectTools(server: McpServer, client: TdxClient) {
   );
 
   server.tool(
-    "tdx-project-get",
-    "Get a TDX project by ID",
-    {
-      id: z.number().describe("Project ID"),
-    },
-    async (params) => {
-      try {
-        const result = await client.get(`/projects/${params.id}`);
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-      } catch (e: unknown) {
-        return { content: [{ type: "text", text: String(e) }], isError: true };
-      }
-    }
-  );
-
-  server.tool(
     "tdx-project-update",
     "Update a TDX project",
     {
@@ -73,36 +105,6 @@ export function registerProjectTools(server: McpServer, client: TdxClient) {
     async (params) => {
       try {
         const result = await client.post(`/projects/${params.id}`, params.data);
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-      } catch (e: unknown) {
-        return { content: [{ type: "text", text: String(e) }], isError: true };
-      }
-    }
-  );
-
-  server.tool(
-    "tdx-project-search",
-    "Search TDX projects with filters",
-    {
-      searchText: z.string().optional().describe("Full-text search query"),
-      statusIds: z.array(z.number()).optional().describe("Filter by status IDs"),
-      priorityIds: z.array(z.number()).optional().describe("Filter by priority IDs"),
-      accountIds: z.array(z.number()).optional().describe("Filter by account IDs"),
-      managerUids: z.array(z.string()).optional().describe("Filter by project manager UIDs"),
-      isActive: z.boolean().optional().describe("Filter by active status"),
-      maxResults: z.number().optional().describe("Max results to return (default 25)"),
-    },
-    async (params) => {
-      const body: Record<string, unknown> = {};
-      if (params.searchText !== undefined) body.SearchText = params.searchText;
-      if (params.statusIds !== undefined) body.StatusIDs = params.statusIds;
-      if (params.priorityIds !== undefined) body.PriorityIDs = params.priorityIds;
-      if (params.accountIds !== undefined) body.AccountIDs = params.accountIds;
-      if (params.managerUids !== undefined) body.ManagerUids = params.managerUids;
-      if (params.isActive !== undefined) body.IsActive = params.isActive;
-      if (params.maxResults !== undefined) body.MaxResults = params.maxResults;
-      try {
-        const result = await client.post("/projects/search", body);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       } catch (e: unknown) {
         return { content: [{ type: "text", text: String(e) }], isError: true };

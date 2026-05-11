@@ -5,11 +5,11 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { loadConfig } from "./config.js";
 import { TdxClient } from "./tdx-client.js";
 import { registerTicketTools, registerTicketReadOnlyTools } from "./tools/tickets.js";
-import { registerAssetTools } from "./tools/assets.js";
-import { registerCmdbTools } from "./tools/cmdb.js";
-import { registerKbTools } from "./tools/kb.js";
-import { registerProjectTools } from "./tools/projects.js";
-import { registerPeopleTools } from "./tools/people.js";
+import { registerAssetTools, registerAssetReadOnlyTools } from "./tools/assets.js";
+import { registerCmdbTools, registerCmdbReadOnlyTools } from "./tools/cmdb.js";
+import { registerKbTools, registerKbReadOnlyTools } from "./tools/kb.js";
+import { registerProjectTools, registerProjectReadOnlyTools } from "./tools/projects.js";
+import { registerPeopleTools, registerPeopleReadOnlyTools } from "./tools/people.js";
 import { registerAccountTools } from "./tools/accounts.js";
 import { registerGroupTools } from "./tools/groups.js";
 import { registerAttributeTools } from "./tools/attributes.js";
@@ -56,25 +56,52 @@ console.error("[TDX-MCP] Registering ticket read-only tools...");
 registerTicketReadOnlyTools(server, client);
 console.error("[TDX-MCP] Ticket read-only tools registered successfully!");
 
+// Asset read-only tools always enabled
+console.error("[TDX-MCP] Registering asset read-only tools...");
+registerAssetReadOnlyTools(server, client);
+console.error("[TDX-MCP] Asset read-only tools registered successfully!");
 registerIfAllowed(
   () => registerAssetTools(server, client),
   "registerAssetTools"
 );
+
+// CMDB read-only tools always enabled
+console.error("[TDX-MCP] Registering CMDB read-only tools...");
+registerCmdbReadOnlyTools(server, client);
+console.error("[TDX-MCP] CMDB read-only tools registered successfully!");
 registerIfAllowed(
   () => registerCmdbTools(server, client),
   "registerCmdbTools"
 );
+
+// KB read-only tools always enabled
+console.error("[TDX-MCP] Registering KB read-only tools...");
+registerKbReadOnlyTools(server, client);
+console.error("[TDX-MCP] KB read-only tools registered successfully!");
 registerIfAllowed(
   () => registerKbTools(server, client),
   "registerKbTools"
 );
+
+// Project read-only tools always enabled
+console.error("[TDX-MCP] Registering project read-only tools...");
+registerProjectReadOnlyTools(server, client);
+console.error("[TDX-MCP] Project read-only tools registered successfully!");
 registerIfAllowed(
   () => registerProjectTools(server, client),
   "registerProjectTools"
 );
 
+// People read-only tools always enabled
+console.error("[TDX-MCP] Registering people read-only tools...");
+registerPeopleReadOnlyTools(server, client);
+console.error("[TDX-MCP] People read-only tools registered successfully!");
+registerIfAllowed(
+  () => registerPeopleTools(server, client),
+  "registerPeopleTools"
+);
+
 // Read-only tools are always enabled
-registerPeopleTools(server, client);
 registerAccountTools(server, client);
 registerGroupTools(server, client);
 registerAttributeTools(server, client);

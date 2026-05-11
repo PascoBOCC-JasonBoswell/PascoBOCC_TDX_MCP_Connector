@@ -2,6 +2,58 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { TdxClient } from "../tdx-client.js";
 
+export function registerCmdbReadOnlyTools(server: McpServer, client: TdxClient) {
+  const defaultAppId = client.appId;
+
+  server.tool(
+    "tdx-cmdb-get",
+    "Get a TDX configuration item by ID",
+    {
+      appId: z.number().optional().describe("TDX app ID (defaults to env TDX_APP_ID)"),
+      id: z.number().describe("CI ID"),
+    },
+    async (params) => {
+      const app = params.appId ?? defaultAppId;
+      try {
+        const result = await client.get(`/${app}/cmdb/${params.id}`);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (e: unknown) {
+        return { content: [{ type: "text", text: String(e) }], isError: true };
+      }
+    }
+  );
+
+  server.tool(
+    "tdx-cmdb-search",
+    "Search TDX configuration items with filters",
+    {
+      appId: z.number().optional().describe("TDX app ID (defaults to env TDX_APP_ID)"),
+      searchText: z.string().optional().describe("Full-text search query"),
+      typeIds: z.array(z.number()).optional().describe("Filter by CI type IDs"),
+      isActive: z.boolean().optional().describe("Filter by active status"),
+      owningDepartmentIds: z.array(z.number()).optional().describe("Filter by owning department IDs"),
+      locationIds: z.array(z.number()).optional().describe("Filter by location IDs"),
+      maxResults: z.number().optional().describe("Max results to return (default 25)"),
+    },
+    async (params) => {
+      const app = params.appId ?? defaultAppId;
+      const body: Record<string, unknown> = {};
+      if (params.searchText !== undefined) body.SearchText = params.searchText;
+      if (params.typeIds !== undefined) body.TypeIDs = params.typeIds;
+      if (params.isActive !== undefined) body.IsActive = params.isActive;
+      if (params.owningDepartmentIds !== undefined) body.OwningDepartmentIDs = params.owningDepartmentIds;
+      if (params.locationIds !== undefined) body.LocationIDs = params.locationIds;
+      if (params.maxResults !== undefined) body.MaxResults = params.maxResults;
+      try {
+        const result = await client.post(`/${app}/cmdb/search`, body);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (e: unknown) {
+        return { content: [{ type: "text", text: String(e) }], isError: true };
+      }
+    }
+  );
+}
+
 export function registerCmdbTools(server: McpServer, client: TdxClient) {
   const defaultAppId = client.appId;
 
@@ -52,24 +104,6 @@ export function registerCmdbTools(server: McpServer, client: TdxClient) {
   );
 
   server.tool(
-    "tdx-cmdb-get",
-    "Get a TDX configuration item by ID",
-    {
-      appId: z.number().optional().describe("TDX app ID (defaults to env TDX_APP_ID)"),
-      id: z.number().describe("CI ID"),
-    },
-    async (params) => {
-      const app = params.appId ?? defaultAppId;
-      try {
-        const result = await client.get(`/${app}/cmdb/${params.id}`);
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-      } catch (e: unknown) {
-        return { content: [{ type: "text", text: String(e) }], isError: true };
-      }
-    }
-  );
-
-  server.tool(
     "tdx-cmdb-update",
     "Full update of a TDX configuration item",
     {
@@ -100,36 +134,6 @@ export function registerCmdbTools(server: McpServer, client: TdxClient) {
       try {
         await client.delete(`/${app}/cmdb/${params.id}`);
         return { content: [{ type: "text", text: "CI deleted successfully" }] };
-      } catch (e: unknown) {
-        return { content: [{ type: "text", text: String(e) }], isError: true };
-      }
-    }
-  );
-
-  server.tool(
-    "tdx-cmdb-search",
-    "Search TDX configuration items with filters",
-    {
-      appId: z.number().optional().describe("TDX app ID (defaults to env TDX_APP_ID)"),
-      searchText: z.string().optional().describe("Full-text search query"),
-      typeIds: z.array(z.number()).optional().describe("Filter by CI type IDs"),
-      isActive: z.boolean().optional().describe("Filter by active status"),
-      owningDepartmentIds: z.array(z.number()).optional().describe("Filter by owning department IDs"),
-      locationIds: z.array(z.number()).optional().describe("Filter by location IDs"),
-      maxResults: z.number().optional().describe("Max results to return (default 25)"),
-    },
-    async (params) => {
-      const app = params.appId ?? defaultAppId;
-      const body: Record<string, unknown> = {};
-      if (params.searchText !== undefined) body.SearchText = params.searchText;
-      if (params.typeIds !== undefined) body.TypeIDs = params.typeIds;
-      if (params.isActive !== undefined) body.IsActive = params.isActive;
-      if (params.owningDepartmentIds !== undefined) body.OwningDepartmentIDs = params.owningDepartmentIds;
-      if (params.locationIds !== undefined) body.LocationIDs = params.locationIds;
-      if (params.maxResults !== undefined) body.MaxResults = params.maxResults;
-      try {
-        const result = await client.post(`/${app}/cmdb/search`, body);
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       } catch (e: unknown) {
         return { content: [{ type: "text", text: String(e) }], isError: true };
       }

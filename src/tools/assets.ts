@@ -2,6 +2,62 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { TdxClient } from "../tdx-client.js";
 
+export function registerAssetReadOnlyTools(server: McpServer, client: TdxClient) {
+  const defaultAppId = client.assetsAppId ?? client.appId;
+
+  server.tool(
+    "tdx-asset-get",
+    "Get a TDX asset by ID",
+    {
+      appId: z.number().optional().describe("TDX app ID (defaults to env TDX_APP_ID)"),
+      id: z.number().describe("Asset ID"),
+    },
+    async (params) => {
+      const app = params.appId ?? defaultAppId;
+      try {
+        const result = await client.get(`/${app}/assets/${params.id}`);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (e: unknown) {
+        return { content: [{ type: "text", text: String(e) }], isError: true };
+      }
+    }
+  );
+
+  server.tool(
+    "tdx-asset-search",
+    "Search TDX assets with filters",
+    {
+      appId: z.number().optional().describe("TDX app ID (defaults to env TDX_APP_ID)"),
+      searchText: z.string().optional().describe("Full-text search query"),
+      statusIds: z.array(z.number()).optional().describe("Filter by status IDs"),
+      owningDepartmentIds: z.array(z.number()).optional().describe("Filter by owning department IDs"),
+      owningCustomerIds: z.array(z.string()).optional().describe("Filter by owning customer UIDs"),
+      locationIds: z.array(z.number()).optional().describe("Filter by location IDs"),
+      modelIds: z.array(z.number()).optional().describe("Filter by model IDs"),
+      manufacturerIds: z.array(z.number()).optional().describe("Filter by manufacturer IDs"),
+      maxResults: z.number().optional().describe("Max results to return (default 25)"),
+    },
+    async (params) => {
+      const app = params.appId ?? defaultAppId;
+      const body: Record<string, unknown> = {};
+      if (params.searchText !== undefined) body.SearchText = params.searchText;
+      if (params.statusIds !== undefined) body.StatusIDs = params.statusIds;
+      if (params.owningDepartmentIds !== undefined) body.OwningDepartmentIDs = params.owningDepartmentIds;
+      if (params.owningCustomerIds !== undefined) body.OwningCustomerIDs = params.owningCustomerIds;
+      if (params.locationIds !== undefined) body.LocationIDs = params.locationIds;
+      if (params.modelIds !== undefined) body.ModelIDs = params.modelIds;
+      if (params.manufacturerIds !== undefined) body.ManufacturerIDs = params.manufacturerIds;
+      if (params.maxResults !== undefined) body.MaxResults = params.maxResults;
+      try {
+        const result = await client.post(`/${app}/assets/search`, body);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (e: unknown) {
+        return { content: [{ type: "text", text: String(e) }], isError: true };
+      }
+    }
+  );
+}
+
 export function registerAssetTools(server: McpServer, client: TdxClient) {
   const defaultAppId = client.assetsAppId ?? client.appId;
 
@@ -66,24 +122,6 @@ export function registerAssetTools(server: McpServer, client: TdxClient) {
   );
 
   server.tool(
-    "tdx-asset-get",
-    "Get a TDX asset by ID",
-    {
-      appId: z.number().optional().describe("TDX app ID (defaults to env TDX_APP_ID)"),
-      id: z.number().describe("Asset ID"),
-    },
-    async (params) => {
-      const app = params.appId ?? defaultAppId;
-      try {
-        const result = await client.get(`/${app}/assets/${params.id}`);
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-      } catch (e: unknown) {
-        return { content: [{ type: "text", text: String(e) }], isError: true };
-      }
-    }
-  );
-
-  server.tool(
     "tdx-asset-update",
     "Full update of a TDX asset",
     {
@@ -133,40 +171,6 @@ export function registerAssetTools(server: McpServer, client: TdxClient) {
       try {
         await client.delete(`/${app}/assets/${params.id}`);
         return { content: [{ type: "text", text: "Asset deleted successfully" }] };
-      } catch (e: unknown) {
-        return { content: [{ type: "text", text: String(e) }], isError: true };
-      }
-    }
-  );
-
-  server.tool(
-    "tdx-asset-search",
-    "Search TDX assets with filters",
-    {
-      appId: z.number().optional().describe("TDX app ID (defaults to env TDX_APP_ID)"),
-      searchText: z.string().optional().describe("Full-text search query"),
-      statusIds: z.array(z.number()).optional().describe("Filter by status IDs"),
-      owningDepartmentIds: z.array(z.number()).optional().describe("Filter by owning department IDs"),
-      owningCustomerIds: z.array(z.string()).optional().describe("Filter by owning customer UIDs"),
-      locationIds: z.array(z.number()).optional().describe("Filter by location IDs"),
-      modelIds: z.array(z.number()).optional().describe("Filter by model IDs"),
-      manufacturerIds: z.array(z.number()).optional().describe("Filter by manufacturer IDs"),
-      maxResults: z.number().optional().describe("Max results to return (default 25)"),
-    },
-    async (params) => {
-      const app = params.appId ?? defaultAppId;
-      const body: Record<string, unknown> = {};
-      if (params.searchText !== undefined) body.SearchText = params.searchText;
-      if (params.statusIds !== undefined) body.StatusIDs = params.statusIds;
-      if (params.owningDepartmentIds !== undefined) body.OwningDepartmentIDs = params.owningDepartmentIds;
-      if (params.owningCustomerIds !== undefined) body.OwningCustomerIDs = params.owningCustomerIds;
-      if (params.locationIds !== undefined) body.LocationIDs = params.locationIds;
-      if (params.modelIds !== undefined) body.ModelIDs = params.modelIds;
-      if (params.manufacturerIds !== undefined) body.ManufacturerIDs = params.manufacturerIds;
-      if (params.maxResults !== undefined) body.MaxResults = params.maxResults;
-      try {
-        const result = await client.post(`/${app}/assets/search`, body);
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       } catch (e: unknown) {
         return { content: [{ type: "text", text: String(e) }], isError: true };
       }

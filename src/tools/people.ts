@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { TdxClient } from "../tdx-client.js";
 
-export function registerPeopleTools(server: McpServer, client: TdxClient) {
+export function registerPeopleReadOnlyTools(server: McpServer, client: TdxClient) {
   server.tool(
     "tdx-people-get",
     "Get a TDX person by UID",
@@ -73,7 +73,9 @@ export function registerPeopleTools(server: McpServer, client: TdxClient) {
       }
     }
   );
+}
 
+export function registerPeopleTools(server: McpServer, client: TdxClient) {
   server.tool(
     "tdx-people-update",
     "Update a TDX person",

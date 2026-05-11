@@ -88,6 +88,8 @@ Tokens are fetched lazily on the first tool call and auto-refreshed after 23 hou
 | `TDX_WEB_SERVICES_KEY` | Yes | Web Services Key from TDAdmin |
 | `TDX_APP_ID` | Yes | Default TDX application ID (integer) |
 | `TDX_ASSETS_APP_ID` | No | TDX application ID for asset operations (integer). If not set, defaults to `TDX_APP_ID` |
+| `TDX_KB_APP_ID` | No | TDX application ID for knowledge base operations (integer). If not set, defaults to `TDX_APP_ID` |
+| `ALLOW_MODIFICATIONS` | No | Enable/disable modification tools (create, update, delete). Set to `"true"` to enable 27 modification tools. Default is `"false"` (safe mode - read-only) |
 
 ## Tools (43)
 

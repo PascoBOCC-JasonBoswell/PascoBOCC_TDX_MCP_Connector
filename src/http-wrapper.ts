@@ -503,13 +503,30 @@ function getOrCreateSession(sessionId) {
 
 // Create HTTP server
 const server = http.createServer((req, res) => {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Helper to send response with consistent CORS headers
+  const sendResponse = (statusCode: number, contentType: string, body: string) => {
+    res.writeHead(statusCode, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Content-Type': contentType
+    });
+    res.end(body);
+  };
+
+  const sendError = (statusCode: number, error: string, details?: string) => {
+    sendResponse(statusCode, 'application/json', JSON.stringify({ 
+      error, 
+      ...(details && { details }) 
+    }));
+  };
 
   if (req.method === 'OPTIONS') {
-    res.writeHead(200);
+    res.writeHead(200, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    });
     res.end();
     return;
   }
@@ -520,9 +537,7 @@ const server = http.createServer((req, res) => {
     const providedKey = authHeader.replace('Bearer ', '').trim();
     
     if (!providedKey || providedKey !== API_KEY) {
-      res.writeHead(401);
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: 'Unauthorized: Invalid or missing API key' }));
+      sendError(401, 'Unauthorized: Invalid or missing API key');
       return;
     }
   }
@@ -541,9 +556,7 @@ const server = http.createServer((req, res) => {
 
   // Health check endpoint (no auth required)
   if (req.url === '/health' && req.method === 'GET') {
-    res.setHeader('Content-Type', 'application/json');
-    res.writeHead(200);
-    res.end(JSON.stringify({ 
+    sendResponse(200, 'application/json', JSON.stringify({ 
       status: 'healthy', 
       uptime: process.uptime(),
       timestamp: new Date().toISOString()
@@ -553,9 +566,7 @@ const server = http.createServer((req, res) => {
 
   // Status endpoint
   if (req.url === '/status' && req.method === 'GET') {
-    res.setHeader('Content-Type', 'application/json');
-    res.writeHead(200);
-    res.end(JSON.stringify({
+    sendResponse(200, 'application/json', JSON.stringify({
       service: 'TDX MCP HTTP Wrapper',
       version: '1.0.0',
       port: PORT,
@@ -581,10 +592,7 @@ const server = http.createServer((req, res) => {
         const message = JSON.parse(body);
         handleMcpRequest(message, res);
       } catch (err) {
-        console.error('[HTTP Server] JSON parse error:', err.message);
-        res.setHeader('Content-Type', 'application/json');
-        res.writeHead(400);
-        res.end(JSON.stringify({ error: 'Invalid JSON', details: err.message }));
+        sendError(400, 'Invalid JSON', (err as Error).message);
       }
     });
     return;
@@ -592,9 +600,7 @@ const server = http.createServer((req, res) => {
 
   // Tools endpoint - list available tools
   if (req.url === '/tools' && req.method === 'GET') {
-    res.setHeader('Content-Type', 'application/json');
-    res.writeHead(200);
-    res.end(JSON.stringify({
+    sendResponse(200, 'application/json', JSON.stringify({
       tools: [
         'tdx-ticket-create',
         'tdx-ticket-search',
@@ -645,9 +651,7 @@ const server = http.createServer((req, res) => {
   }
 
   // 404 for unknown routes
-  res.setHeader('Content-Type', 'application/json');
-  res.writeHead(404);
-  res.end(JSON.stringify({ error: 'Not found', path: req.url }));
+  sendError(404, 'Not found', req.url);
 });
 
 // Handle MCP-over-HTTP requests (POST to root)
@@ -675,8 +679,7 @@ function handleMCPHTTPRequest(req, res) {
         // Notifications don't expect responses
         session.sendRequest(message);
         
-        res.setHeader('Content-Type', 'application/json');
-        res.writeHead(202); // Accepted
+        res.writeHead(202, { 'Content-Type': 'application/json' }); // Accepted
         res.end(JSON.stringify({ accepted: true, sessionId }));
         return;
       }
@@ -710,8 +713,7 @@ function handleMCPHTTPRequest(req, res) {
           session.responseHandlers = session.responseHandlers.filter(h => h !== responseHandler);
           
           if (!res.headersSent) {
-            res.setHeader('Content-Type', 'application/json');
-            res.writeHead(504);
+            res.writeHead(504, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Request timeout', id: message.id }));
           }
         }
@@ -726,18 +728,20 @@ function handleMCPHTTPRequest(req, res) {
           // Remove handler
           session.responseHandlers = session.responseHandlers.filter(h => h !== responseHandler);
           
-          console.log(`[MCP HTTP] Returning response to request id ${message.id}`);
-          res.setHeader('Content-Type', 'application/json');
-          res.writeHead(200);
-          res.end(JSON.stringify(responseData));
+          if (!res.headersSent) {
+            console.log(`[MCP HTTP] Returning response to request id ${message.id}`);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(responseData));
+          }
         }
       }, 50); // Poll every 50ms
       
     } catch (err) {
-      console.error('[MCP HTTP] JSON parse error:', err.message);
-      res.setHeader('Content-Type', 'application/json');
-      res.writeHead(400);
-      res.end(JSON.stringify({ error: 'Invalid JSON', details: err.message }));
+      console.error('[MCP HTTP] JSON parse error:', (err as Error).message);
+      if (!res.headersSent) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON', details: (err as Error).message }));
+      }
     }
   });
 }
@@ -821,13 +825,25 @@ function handleMcpRequest(message, res) {
   let error = '';
   let responded = false;
 
+  const sendJsonResponse = (statusCode: number, body: any) => {
+    if (!responded) {
+      responded = true;
+      res.writeHead(statusCode, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      });
+      res.end(JSON.stringify(body));
+    }
+  };
+
   const timeout = setTimeout(() => {
     if (!responded) {
       responded = true;
       mcp.kill();
       mcpPool.releaseProcess(null);
-      res.writeHead(504);
-      res.end(JSON.stringify({ error: 'MCP server timeout' }));
+      sendJsonResponse(504, { error: 'MCP server timeout' });
     }
   }, 10000);
 
@@ -844,8 +860,7 @@ function handleMcpRequest(message, res) {
     if (!responded) {
       responded = true;
       clearTimeout(timeout);
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: 'MCP process error', details: err.message }));
+      sendJsonResponse(500, { error: 'MCP process error', details: (err as Error).message });
     }
   });
 
@@ -858,8 +873,8 @@ function handleMcpRequest(message, res) {
       if (code !== 0) {
         console.error(`[MCP Process] Exited with code ${code}`);
         if (error) {
-          res.writeHead(500);
-          res.end(JSON.stringify({ error: 'MCP execution error', details: error }));
+          sendJsonResponse(500, { error: 'MCP execution error', details: error });
+          mcpPool.releaseProcess(null);
           return;
         }
       }
@@ -885,26 +900,20 @@ function handleMcpRequest(message, res) {
 
           const executionTime = Date.now() - requestStartTime;
           
-          res.writeHead(200);
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({
+          sendJsonResponse(200, {
             success: true,
             results: transformedResults.length === 1 ? transformedResults[0] : transformedResults,
             meta: {
               executionTimeMs: executionTime,
               timestamp: new Date().toISOString()
             }
-          }));
+          });
         } else {
-          res.writeHead(200);
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ success: true, message: 'Processed' }));
+          sendJsonResponse(200, { success: true, message: 'Processed' });
         }
       } catch (parseErr) {
-        console.error('[HTTP Server] Response parse error:', parseErr.message);
-        res.writeHead(200);
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ output: output, raw: true }));
+        console.error('[HTTP Server] Response parse error:', (parseErr as Error).message);
+        sendJsonResponse(200, { output: output, raw: true });
       }
     }
 
@@ -920,8 +929,7 @@ function handleMcpRequest(message, res) {
     if (!responded) {
       responded = true;
       clearTimeout(timeout);
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Failed to send to MCP', details: err.message }));
+      sendJsonResponse(500, { error: 'Failed to send to MCP', details: (err as Error).message });
     }
   }
 }

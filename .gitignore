@@ -29,3 +29,4 @@ tdx-mcp.service
 
 # Test & Query Scripts
 /scripts
+/tests

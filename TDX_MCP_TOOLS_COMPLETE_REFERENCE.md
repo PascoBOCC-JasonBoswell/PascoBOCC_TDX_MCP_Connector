@@ -1975,37 +1975,6 @@ Most entities support:
 
 ## Next Testing Priorities
 
-### Known Issues
-
-**HTTP Wrapper Stability**
-- Issue: ERR_HTTP_HEADERS_SENT when handling concurrent requests after SSE clients connect
-- Root Cause: HTTP response object header management conflicts in parallel request handling
-- Status: Partial fix applied (headers ordering in response handlers)
-- Recommendation: Either:
-  1. Refactor HTTP wrapper to use proper request isolation
-  2. Switch to stdio mode for testing (no HTTP layer complexity)
-  3. Use MCP Studio or VS Code MCP extension directly
-
-### Recommended Testing Approach
-
-**Option A: Use VS Code MCP Extension (Recommended)**
-1. Install official VS Code MCP extension
-2. Point it to the production server (see admin for server address)
-3. Test tools directly in the extension interface
-4. Avoids HTTP wrapper issues entirely
-
-**Option B: Use stdio mode locally**
-1. Run MCP server in stdio mode: `node dist/index.js`
-2. Connect via VS Code  or MCP client tool
-3. Test all tools without HTTP layer
-4. More reliable for comprehensive testing
-
-**Option C: Debug & Fix HTTP Wrapper**
-1. Refactor server request handler to isolate response objects properly
-2. Separate SSE streaming connections from regular HTTP endpoints
-3. Add request queuing to prevent concurrent header conflicts
-4. Requires ~4-6 hours of development
-
 ## References
 
 - [Configuration guide](./COPILOT_INTEGRATION.md)

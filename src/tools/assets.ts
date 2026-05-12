@@ -208,8 +208,9 @@ export function registerAssetTools(server: McpServer, client: TdxClient) {
     "Get all available asset categories/forms in TDX",
     {},
     async () => {
+      const app = defaultAppId;
       try {
-        const result = await client.get("/assets/forms");
+        const result = await client.get(`/${app}/assets/forms`);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       } catch (e: unknown) {
         return { content: [{ type: "text", text: String(e) }], isError: true };

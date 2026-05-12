@@ -36,7 +36,7 @@ export class AssetBatcher {
       log(`  Found ${allStatuses.length} statuses`);
 
       log("Step 2: Retrieving asset forms...");
-      const formsResponse = await this.client.get("/assets/forms");
+      const formsResponse = await this.client.get(`/${app}/assets/forms`);
       const allForms = Array.isArray(formsResponse) ? formsResponse : [];
 
       if (allForms.length === 0) {
@@ -219,7 +219,7 @@ export class AssetBatcher {
 
     try {
       log(`Retrieving asset forms for status ${statusId}...`);
-      const formsResponse = await this.client.get("/assets/forms");
+      const formsResponse = await this.client.get(`/${app}/assets/forms`);
       const allForms = Array.isArray(formsResponse) ? formsResponse : [];
 
       log(`  Found ${allForms.length} forms`);

@@ -433,7 +433,52 @@ Retrieves all available asset categories/forms in TeamDynamix.
 
 **Parameters:** None - metadata-only retrieval tool.
 
-**Returns:** Array of asset form/category objects with ID, Name, Description, IsActive, FormFields, and additional metadata.
+**Returns:** Array of asset form/category objects with metadata.
+
+```json
+[
+  {
+    "ID": 1773,
+    "Name": "Computer Asset Form",
+    "AppID": 116,
+    "AppName": "Assets/CIs",
+    "ComponentID": 27,
+    "IsActive": true,
+    "IsConfigured": true,
+    "IsDefaultForApp": true,
+    "IsPinned": true,
+    "ShouldExpandHelp": false,
+    "CreatedDate": "2022-11-04T13:32:59.803Z",
+    "CreatedUid": "e2d6cba3-d51a-ed11-bd6e-0050f2f4ae01",
+    "CreatedFullName": "Steven Basak",
+    "ModifiedDate": "2025-07-31T12:34:45.83Z",
+    "ModifiedUid": "e2d6cba3-d51a-ed11-bd6e-0050f2f4ae01",
+    "ModifiedFullName": "Steven Basak",
+    "AssetsCount": -1,
+    "ConfigurationItemsCount": -1
+  },
+  {
+    "ID": 1772,
+    "Name": "DUO Asset Form",
+    "AppID": 116,
+    "AppName": "Assets/CIs",
+    "ComponentID": 27,
+    "IsActive": true,
+    "IsConfigured": true,
+    "IsDefaultForApp": false,
+    "IsPinned": true,
+    "ShouldExpandHelp": false,
+    "CreatedDate": "2022-11-04T13:13:01.3Z",
+    "CreatedUid": "e2d6cba3-d51a-ed11-bd6e-0050f2f4ae01",
+    "CreatedFullName": "Steven Basak",
+    "ModifiedDate": "2022-11-04T14:46:28.177Z",
+    "ModifiedUid": "e2d6cba3-d51a-ed11-bd6e-0050f2f4ae01",
+    "ModifiedFullName": "Steven Basak",
+    "AssetsCount": -1,
+    "ConfigurationItemsCount": -1
+  }
+]
+```
 
 **Notes:** Use this to discover available asset types, find FormIDs for creating new assets, and understand asset structure variations.
 

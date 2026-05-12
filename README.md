@@ -221,11 +221,12 @@ For deployment instructions, see:
 
 | Document | Purpose |
 |----------|---------|
-| **[TDX_MCP_TOOLS_COMPLETE_REFERENCE.md](TDX_MCP_TOOLS_COMPLETE_REFERENCE.md)** | Complete reference for all 43 tools with parameters, test cases, and infrastructure verification results |
+| **[TOOLS_REFERENCE.md](TOOLS_REFERENCE.md)** | Complete reference for all 43 tools with parameters, return structures, and usage examples |
+| **[TESTING_REPORT.md](TESTING_REPORT.md)** | Test results, infrastructure verification, and testing methodology (20/43 tools tested, 43 tests passing) |
 | **[DEPLOYMENT_UBUNTU.md](DEPLOYMENT_UBUNTU.md)** | Ubuntu server deployment, systemd service setup, and production configuration |
 | **[COPILOT_INTEGRATION.md](COPILOT_INTEGRATION.md)** | GitHub Copilot Chat and Microsoft Copilot Studio integration instructions |
 
-For complete tool documentation and reference information, see [TDX_MCP_TOOLS_COMPLETE_REFERENCE.md](TDX_MCP_TOOLS_COMPLETE_REFERENCE.md).
+For complete tool documentation, see [TOOLS_REFERENCE.md](TOOLS_REFERENCE.md). For test results and infrastructure details, see [TESTING_REPORT.md](TESTING_REPORT.md).
 
 ## Example Usage
 

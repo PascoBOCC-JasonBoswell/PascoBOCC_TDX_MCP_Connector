@@ -34,15 +34,15 @@ param(
     [string]$OutputFile = ""
 )
 
-# Load parameters from test-params.ps1 if it exists
-$paramsFile = Join-Path -Path $PSScriptRoot -ChildPath "test-params.ps1"
-if (Test-Path $paramsFile) {
-    . $paramsFile
+# Load parameters from test-params.json if it exists
+$jsonParamsFile = Join-Path -Path $PSScriptRoot -ChildPath "test-params.json"
+if (Test-Path $jsonParamsFile) {
+    $params = Get-Content $jsonParamsFile | ConvertFrom-Json
     # Use loaded values only if parameters weren't explicitly provided
-    if (-not $PSBoundParameters.ContainsKey('ServerUrl')) { $ServerUrl = $ServerUrl }
-    if (-not $PSBoundParameters.ContainsKey('BearerToken')) { $BearerToken = $BearerToken }
+    if (-not $PSBoundParameters.ContainsKey('ServerUrl')) { $ServerUrl = $params.serverUrl }
+    if (-not $PSBoundParameters.ContainsKey('BearerToken')) { $BearerToken = $params.bearerToken }
 } else {
-    Write-Error "test-params.ps1 not found. Please copy test-params.example.ps1 to test-params.ps1 and fill in your credentials."
+    Write-Error "test-params.json not found. Please create from test-params.example.json with your credentials."
     exit 1
 }
 

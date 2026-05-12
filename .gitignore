@@ -30,3 +30,4 @@ tdx-mcp.service
 # Test & Query Scripts
 /tests/results
 /tests/test-params.ps1
+/tests/test-params.json

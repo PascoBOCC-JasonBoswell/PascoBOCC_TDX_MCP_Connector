@@ -2,8 +2,15 @@
 # Tests all 43 tools against live MCP server with real search queries and valid IDs
 # Outputs JSON results for documentation
 
-# Load test parameters from secure config file
-. "$PSScriptRoot/test-params.ps1"
+# Load test parameters from JSON config file
+$paramsFile = Join-Path -Path $PSScriptRoot -ChildPath "test-params.json"
+if (-not (Test-Path $paramsFile)) {
+    Write-Error "test-params.json not found. Please create from test-params.example.json"
+    exit 1
+}
+$params = Get-Content $paramsFile | ConvertFrom-Json
+$ServerUrl = $params.serverUrl
+$BearerToken = $params.bearerToken
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $resultsDir = Join-Path -Path (Get-Location) -ChildPath "results"

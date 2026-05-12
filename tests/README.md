@@ -8,18 +8,22 @@ Before running any test scripts, you need to configure your test parameters:
 
 1. **Copy the example parameters file:**
    ```powershell
-   cp test-params.example.ps1 test-params.ps1
+   cp test-params.example.json test-params.json
    ```
 
-2. **Edit `test-params.ps1` with your credentials:**
-   - Replace `your-bearer-token-here` with your actual TDX API bearer token
-   - Update `$ServerUrl` with your server's MCP endpoint (e.g., `http://your-server-host:3000/mcp`)
+2. **Edit `test-params.json` with your credentials:**
+   ```json
+   {
+     "serverUrl": "http://your-server-host:3000/mcp",
+     "bearerToken": "your-bearer-token-here"
+   }
+   ```
 
-3. **Note:** `test-params.ps1` is excluded from git (see `.gitignore`) to keep credentials secure.
+3. **Note:** `test-params.json` is excluded from git (see `.gitignore`) to keep credentials secure.
 
 4. **Run tests:**
    ```powershell
-   .\test-tools.ps1
+   .\test-all-tools-live.ps1
    .\test-server-status.ps1
    ```
 

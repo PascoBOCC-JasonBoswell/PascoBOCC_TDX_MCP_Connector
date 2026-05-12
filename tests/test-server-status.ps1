@@ -111,8 +111,9 @@ function Test-AuthorizationHeader {
         
         return @{
             name = "Authorization Header"
-            status = "✅ PASS"
+            status = $response.StatusCode -eq 200 ? "✅ PASS" : "⚠️ WARNING"
             validToken = $true
+            statusCode = $response.StatusCode
         }
     } catch {
         return @{
@@ -130,17 +131,17 @@ function Test-ToolRegistration {
     try {
         $headers = @{"Authorization" = "Bearer $bearerToken"}
         $response = Invoke-WebRequest "http://$address/tools" -Headers $headers -ErrorAction Stop
-        $tools = $response.Content | ConvertFrom-Json
+        $toolsData = $response.Content | ConvertFrom-Json
         
-        $readOnlyTools = @($tools | Where-Object { $_.name -match "(search|get|lookup)" }).Count
-        $modificationTools = @($tools | Where-Object { $_.name -match "(create|update|patch|delete|feed-add)" }).Count
+        # The /tools endpoint returns { tools: [...] }
+        $tools = if ($toolsData.tools) { $toolsData.tools } else { @() }
         
         return @{
             name = "Tool Registration"
             status = "✅ PASS"
             totalToolsRegistered = $tools.Count
-            readOnlyTools = $readOnlyTools
-            modificationTools = $modificationTools
+            readOnlyTools = @($tools | Where-Object { $_.name -match "(search|get)" }).Count
+            modificationTools = @($tools | Where-Object { $_.name -match "(create|update|patch|delete|feed)" }).Count
         }
     } catch {
         return @{
@@ -220,7 +221,7 @@ function Test-ResponseTime {
     param([string]$address, [string]$bearerToken)
     
     try {
-        $headers = @{"Authorization" = "Bearer $apiKey"}
+        $headers = @{"Authorization" = "Bearer $bearerToken"}
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
         $response = Invoke-WebRequest "http://$address/health" -Headers $headers -ErrorAction Stop
         $stopwatch.Stop()
@@ -230,9 +231,10 @@ function Test-ResponseTime {
         
         return @{
             name = "Response Time"
-            status = $responseTime -lt $threshold ? "✅ PASS" : "⚠️ WARNING"
+            status = ($responseTime -lt $threshold -and $response.StatusCode -eq 200) ? "✅ PASS" : "⚠️ WARNING"
             responseTimeMs = $responseTime
             threshold = $threshold
+            statusCode = $response.StatusCode
         }
     } catch {
         return @{

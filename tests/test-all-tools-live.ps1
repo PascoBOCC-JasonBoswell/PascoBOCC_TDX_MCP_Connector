@@ -285,11 +285,9 @@ Write-Host "Total:  $($allResults['toolsTotal'])"
 Write-Host "========================================" -ForegroundColor Green
 
 # Save results to file
-$outputFileName = "test-results-live-valid-$(Get-Date -Format 'yyyyMMdd-HHmmss').json"
-$outputPath = Join-Path -Path $resultsDir -ChildPath $outputFileName
 $resultsJson = $allResults | ConvertTo-Json -Depth 20
-$resultsJson | Out-File -FilePath $outputPath -Encoding UTF8 -Force
+$resultsJson | Out-File -FilePath $outputFile -Encoding UTF8 -Force
 
 Write-Host ""
-Write-Host "Results saved to: $outputPath" -ForegroundColor Cyan
+Write-Host "Results saved to: $outputFile" -ForegroundColor Cyan
 Write-Host ""

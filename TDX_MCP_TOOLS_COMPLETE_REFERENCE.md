@@ -487,7 +487,7 @@ Creates a new asset in inventory.
 ---
 
 ## tdx-asset-get
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/assets.ts
 
 ### Overview
@@ -577,7 +577,7 @@ Deletes an asset.
 ---
 
 ## tdx-asset-search
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/assets.ts
 
 ### Overview
@@ -638,7 +638,7 @@ Adds a note/comment to an asset's feed.
 ---
 
 ## tdx-asset-categories
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/assets.ts
 
 ### Overview
@@ -1165,7 +1165,7 @@ Use this to discover:
 ### CMDB (Configuration Items)
 
 ## tdx-cmdb-get
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/cmdb.ts
 
 ### Overview
@@ -1207,7 +1207,7 @@ Retrieves full details for a specific Configuration Item (CI) by ID.
 ---
 
 ## tdx-cmdb-search
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/cmdb.ts
 
 ### Overview
@@ -1256,7 +1256,7 @@ Searches and filters Configuration Items with multiple filtering options. Filter
 ---
 
 ## tdx-cmdb-feed-get
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/cmdb.ts (add method not shown; verify it exists)
 
 ### Overview
@@ -1300,7 +1300,7 @@ Similar to ticket feed:
 ### Knowledge Base (KB)
 
 ## tdx-kb-get
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/kb.ts
 
 ### Overview
@@ -1348,7 +1348,7 @@ Retrieves a Knowledge Base article by ID.
 ---
 
 ## tdx-kb-search
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/kb.ts
 
 ### Overview
@@ -1391,7 +1391,7 @@ Searches Knowledge Base articles with filtering. Similar pattern to ticket/CMDB 
 ### Projects
 
 ## tdx-project-get
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/projects.ts
 
 ### Overview
@@ -1441,7 +1441,7 @@ Retrieves project details by ID.
 ---
 
 ## tdx-project-search
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/projects.ts
 
 ### Overview
@@ -1485,7 +1485,7 @@ Searches projects with filtering and full-text search.
 ### People
 
 ## tdx-people-get
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/people.ts
 
 ### Overview
@@ -1531,7 +1531,7 @@ Retrieves person details by UID.
 ---
 
 ## tdx-people-search
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/people.ts
 
 ### Overview
@@ -1580,7 +1580,7 @@ Searches people with multiple filtering options.
 ---
 
 ## tdx-people-lookup
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/people.ts
 
 ### Overview
@@ -1617,7 +1617,7 @@ Same as people search result format.
 ### Accounts & Groups
 
 ## tdx-account-get
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/accounts.ts
 
 ### Overview
@@ -1661,7 +1661,7 @@ Retrieves account/department details by ID.
 ---
 
 ## tdx-account-search
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/accounts.ts
 
 ### Overview
@@ -1694,7 +1694,7 @@ Searches accounts/departments.
 ---
 
 ## tdx-group-get
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/groups.ts
 
 ### Overview
@@ -1738,7 +1738,7 @@ Retrieves group/team details by ID.
 ---
 
 ## tdx-group-search
-**Status:** ✅ DOCUMENTED & READY TO TEST  
+**Status:** ✅ FULLY TESTED \(May 12, 2026\)  
 **Source:** src/tools/groups.ts
 
 ### Overview

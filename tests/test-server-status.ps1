@@ -8,10 +8,10 @@
     Results can be output to JSON for documentation and comparison.
 
 .PARAMETER ServerUrl
-    Server MCP URL endpoint (default: http://10.210.1.38:3000/mcp)
+    Server MCP URL endpoint (default: loaded from test-params.json)
 
 .PARAMETER BearerToken
-    Bearer token for authentication (default: TDX API bearer token)
+    Bearer token for authentication (default: loaded from test-params.json)
 
 .PARAMETER OutputFormat
     Output format: Console (default) or JSON. JSON results are automatically saved to tests\results directory.

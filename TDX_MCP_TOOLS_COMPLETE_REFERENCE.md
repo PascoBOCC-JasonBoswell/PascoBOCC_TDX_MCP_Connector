@@ -2,12 +2,12 @@
 
 **Last Updated:** May 12, 2026 (08:37 UTC) - FINAL TESTING COMPLETE  
 **Total Tools:** 43 tools across 10 categories  
-**Status Summary:** 21 FULLY TESTED & VERIFIED (✅), 22 MODIFICATION TOOLS DISABLED (🔴)
+**Status Summary:** 20 FULLY TESTED & VERIFIED (✅), 23 MODIFICATION TOOLS DISABLED (🔴)
 
 **Current Deployment Status:**
 - ✅ Production server DEPLOYED & STABLE (running 5+ minutes without crashes)
 - ✅ HTTP wrapper FIXED & VERIFIED (atomic header management, no concurrency errors)
-- ✅ **ALL 21 READ-ONLY TOOLS COMPREHENSIVELY TESTED** (100% pass rate - May 12, 2026)
+- ✅ **ALL 20 READ-ONLY TOOLS COMPREHENSIVELY TESTED** (100% pass rate - May 12, 2026)
 - ✅ All tools fully functional and documented with detailed test cases
 - ✅ Comprehensive testing infrastructure in place
 - 📊 **PRODUCTION READY** - All read-only operations fully verified and tested
@@ -52,8 +52,8 @@
 
 ### Tool Registration & Availability
 - **Total Tools Registered:** 43
-- **Read-Only Tools Enabled:** 17 (100% discoverable)
-- **Modification Tools Disabled:** 26 (via ALLOW_MODIFICATIONS=false)
+- **Read-Only Tools Enabled:** 20 (100% discoverable and tested)
+- **Modification Tools Disabled:** 23 (via ALLOW_MODIFICATIONS=false)
 - **Discovery Endpoint:** /tools (requires Bearer token auth)
 - **Execution Endpoint:** /mcp (JSON-RPC POST)
 
@@ -64,9 +64,9 @@
 
 ---
 
-## Tested & Verified Tools (21/43) - ALL READ-ONLY TOOLS TESTED
+## Tested & Verified Tools (20/43) - ALL READ-ONLY TOOLS TESTED
 
-**Testing Complete: All 21 read-only tools have been comprehensively tested with 100% pass rate on May 12, 2026.**
+**Testing Complete: All 20 read-only tools have been comprehensively tested with 100% pass rate (May 11-12, 2026).**
 
 #### ✅ tdx-ticket-search
 - **Parameters Tested:** searchText, statusIds, maxResults
@@ -98,9 +98,9 @@
 
 ---
 
-## Read-Only Tools - Fully Tested (21 total)
+## Read-Only Tools - Fully Tested (20 total)
 
-**All 21 read-only tools have been comprehensively tested with 100% pass rate (May 12, 2026).**
+**All 20 read-only tools have been comprehensively tested with 100% pass rate (May 11-12, 2026).**
 
 The following tools are **ENABLED** and fully functional. All have been tested and verified.
 
@@ -114,7 +114,6 @@ The following tools are **ENABLED** and fully functional. All have been tested a
 | Assets | tdx-asset-categories | ✅ TESTED | May 12 |
 | CMDB | tdx-cmdb-search | ✅ TESTED | May 12 |
 | CMDB | tdx-cmdb-get | ✅ TESTED | May 12 |
-| CMDB | tdx-cmdb-feed-get | ✅ TESTED | May 12 |
 | Knowledge Base | tdx-kb-search | ✅ TESTED | May 12 |
 | Knowledge Base | tdx-kb-get | ✅ TESTED | May 12 |
 | Projects | tdx-project-search | ✅ TESTED | May 12 |
@@ -131,40 +130,18 @@ The following tools are **ENABLED** and fully functional. All have been tested a
 
 ---
 
-## Read-Only Tools - Ready for Testing (12 remaining)
+## Modification Tools - Intentionally Disabled (23 total)
 
-The following tools are **ENABLED** and ready for use. Comprehensive parameter documentation is provided below.
-
-| Category | Tool Name | Status |
-|----------|-----------|--------|
-| Assets | tdx-asset-search | 📋 READY |
-| Assets | tdx-asset-get | 📋 READY |
-| Assets | tdx-asset-categories | 📋 READY |
-| CMDB | tdx-cmdb-search | 📋 READY |
-| CMDB | tdx-cmdb-get | 📋 READY |
-| Knowledge Base | tdx-kb-search | 📋 READY |
-| Knowledge Base | tdx-kb-get | 📋 READY |
-| Projects | tdx-project-search | 📋 READY |
-| Projects | tdx-project-get | 📋 READY |
-| People | tdx-people-search | 📋 READY |
-| People | tdx-people-lookup | 📋 READY |
-| Accounts | tdx-account-search | 📋 READY |
-| Groups | tdx-group-search | 📋 READY |
-
----
-
-## Modification Tools - Intentionally Disabled (22 total)
-
-The following 22 tools are **DISABLED** for safety. They will return "not found" errors until ALLOW_MODIFICATIONS is set to "true".
+The following 23 tools are **DISABLED** for safety. They will return "not found" errors until ALLOW_MODIFICATIONS is set to "true".
 
 ### Tool Breakdown
 - **Tickets:** 6 modification tools (create, update, patch, feed-add, add-asset, add-contact)
 - **Assets:** 5 modification tools (create, update, patch, delete, feed-add)
-- **CMDB:** 5 modification tools (create, update, patch, delete, feed-add)
+- **CMDB:** 6 modification tools (create, update, patch, delete, feed-add, add-relationship)
 - **Knowledge Base:** 3 modification tools (create, update, delete)
 - **Projects:** 2 modification tools (create, update)
 - **People:** 1 modification tool (update)
-- **Total:** 22 modification tools disabled by default
+- **Total:** 23 modification tools disabled by default
 
 ---
 
